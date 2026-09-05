@@ -9,7 +9,7 @@ import {
   Calendar,
   Flame,
   TrendingUp,
-} from 'lucide-react';
+} from '../../icons';
 import { Avatar } from '../../components/Avatar';
 import { Badge } from '../../components/Badge';
 import { Contributor, RepoDetails } from '../../engine/types';

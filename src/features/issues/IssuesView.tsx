@@ -11,7 +11,7 @@ import {
   User,
   Send,
   Sparkles,
-} from 'lucide-react';
+} from '../../icons';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Input, TextArea } from '../../components/Input';

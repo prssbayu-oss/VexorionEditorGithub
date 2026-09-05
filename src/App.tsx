@@ -14,7 +14,7 @@ import { PullRequestsView } from './features/pull-requests/PullRequestsView';
 import { ActionsView } from './features/actions/ActionsView';
 import { InsightsView } from './features/insights/InsightsView';
 import { CommandPalette } from './features/command-palette/CommandPalette';
-import { Github, Heart, CheckCircle2 } from 'lucide-react';
+import { Github, Heart, CheckCircle2 } from './icons';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('code');

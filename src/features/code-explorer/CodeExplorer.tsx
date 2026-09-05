@@ -24,7 +24,7 @@ import {
   Edit3,
   Loader2,
   CheckCircle2,
-} from 'lucide-react';
+} from '../../icons';
 import { Button } from '../../components/Button';
 import { Dropdown } from '../../components/Dropdown';
 import { Breadcrumbs } from '../../components/Breadcrumbs';

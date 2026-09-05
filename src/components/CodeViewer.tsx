@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, FileCode, Eye, Code2 } from 'lucide-react';
+import { Copy, Check, FileCode, Eye, Code2 } from '../icons';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 

@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Zap,
   GitBranch,
-} from 'lucide-react';
+} from '../../icons';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Avatar } from '../../components/Avatar';

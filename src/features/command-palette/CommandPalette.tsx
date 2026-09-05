@@ -11,7 +11,7 @@ import {
   BarChart2,
   X,
   CornerDownLeft,
-} from 'lucide-react';
+} from '../../icons';
 import { motion, AnimatePresence } from 'motion/react';
 import { queryRepository, SearchResultItem } from '../../engine/searchEngine';
 import { RepoFile, Issue, PullRequest, GitCommit as GitCommitType } from '../../engine/types';

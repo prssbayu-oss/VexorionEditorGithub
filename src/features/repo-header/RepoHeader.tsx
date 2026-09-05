@@ -13,7 +13,7 @@ import {
   Pin,
   ExternalLink,
   RefreshCw,
-} from 'lucide-react';
+} from '../../icons';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { Tabs, TabItem } from '../../components/Tabs';

@@ -11,7 +11,7 @@ import {
   Moon,
   Github,
   Sparkles,
-} from 'lucide-react';
+} from '../../icons';
 import { Avatar } from '../../components/Avatar';
 
 export interface NavbarProps {

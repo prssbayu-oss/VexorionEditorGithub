@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Folder, FileCode, Home } from 'lucide-react';
+import { ChevronRight, Folder, FileCode, Home } from '../icons';
 
 export interface BreadcrumbSegment {
   name: string;
