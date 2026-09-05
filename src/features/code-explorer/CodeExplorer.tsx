@@ -33,7 +33,8 @@ import { Modal } from '../../components/Modal';
 import { Badge } from '../../components/Badge';
 import { Avatar } from '../../components/Avatar';
 import { RepoFile, GitBranch as GitBranchType, GitCommit, RepoDetails, Contributor } from '../../engine/types';
-import { parseMarkdown } from '../../engine/markdownEngine';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export interface CodeExplorerProps {
   files: RepoFile[];
@@ -228,11 +229,7 @@ export const CodeExplorer: React.FC<CodeExplorerProps> = ({
     }
   }, [rootReadme?.path, onFetchFileContent]);
 
-  const readmeBlocks = readmeContent
-    ? parseMarkdown(readmeContent)
-    : rootReadme?.content
-    ? parseMarkdown(rootReadme.content)
-    : [];
+  const rawReadmeMarkdown = readmeContent || rootReadme?.content || '';
 
   const currentDirFiles = getCurrentDirFiles();
   // Sort: directories first, then files alphabetically
@@ -457,57 +454,18 @@ export const CodeExplorer: React.FC<CodeExplorerProps> = ({
                 </Badge>
               </div>
 
-              <div className="p-6 text-sm text-[#c9d1d9] space-y-4">
-                {readmeBlocks.map((block, idx) => {
-                  if (block.type === 'heading') {
-                    if (block.level === 1) {
-                      return (
-                        <h1 key={idx} className="text-2xl font-bold text-[#f0f6fc] pb-2 border-b border-[#30363d]">
-                          {block.content}
-                        </h1>
-                      );
-                    }
-                    if (block.level === 2) {
-                      return (
-                        <h2 key={idx} className="text-lg font-bold text-[#f0f6fc] pt-3 pb-1 border-b border-[#30363d]/40">
-                          {block.content}
-                        </h2>
-                      );
-                    }
-                    return (
-                      <h3 key={idx} className="text-base font-semibold text-[#f0f6fc] pt-2">
-                        {block.content}
-                      </h3>
-                    );
-                  }
-                  if (block.type === 'code') {
-                    return (
-                      <pre key={idx} className="p-3 bg-[#161b22] rounded-md font-mono text-xs text-[#a5d6ff] overflow-x-auto border border-[#30363d]">
-                        <code>{block.content}</code>
-                      </pre>
-                    );
-                  }
-                  if (block.type === 'list' && block.items) {
-                    return (
-                      <ul key={idx} className="space-y-1.5 list-disc list-inside">
-                        {block.items.map((item, itemIdx) => (
-                          <li key={itemIdx} className="text-[#c9d1d9]">
-                            {item.text}
-                          </li>
-                        ))}
-                      </ul>
-                    );
-                  }
-                  if (block.type === 'hr') {
-                    return <hr key={idx} className="border-[#30363d]" />;
-                  }
-                  return (
-                    <p key={idx} className="leading-relaxed text-[#c9d1d9]">
-                      {block.content}
-                    </p>
-                  );
-                })}
-              </div>
+              {!rawReadmeMarkdown ? (
+                <div className="p-8 text-center text-xs text-[#8b949e] flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-[#58a6ff]" />
+                  <span>Loading README from repository...</span>
+                </div>
+              ) : (
+                <div className="p-6 text-sm text-[#c9d1d9] markdown-body overflow-x-auto">
+                  <Markdown remarkPlugins={[remarkGfm]}>
+                    {rawReadmeMarkdown}
+                  </Markdown>
+                </div>
+              )}
             </div>
           )}
         </div>

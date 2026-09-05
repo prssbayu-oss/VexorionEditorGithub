@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Check, FileCode, Eye, Code2 } from 'lucide-react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export interface CodeViewerProps {
   code: string;
@@ -22,8 +24,9 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   onCodeChange,
   className = '',
 }) => {
+  const isMarkdown = filename?.toLowerCase().endsWith('.md') || language?.toLowerCase() === 'markdown';
   const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState<'preview' | 'raw'>('preview');
+  const [viewMode, setViewMode] = useState<'preview' | 'raw'>(isMarkdown ? 'preview' : 'raw');
 
   const lines = code.split('\n');
 
@@ -119,6 +122,12 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
           className="w-full h-96 p-4 font-mono text-xs text-[#c9d1d9] bg-[#0d1117] resize-y focus:outline-none selection:bg-[#58a6ff]/30 leading-5"
           spellCheck={false}
         />
+      ) : isMarkdown ? (
+        <div className="p-6 text-sm text-[#c9d1d9] markdown-body overflow-x-auto">
+          <Markdown remarkPlugins={[remarkGfm]}>
+            {code}
+          </Markdown>
+        </div>
       ) : (
         <div className="overflow-x-auto py-2 text-xs font-mono leading-5">
           <table className="w-full border-collapse">
