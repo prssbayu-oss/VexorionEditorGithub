@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { repoEngine } from './engine/gitEngine';
+import { GitHubSyncService } from './engine/githubSync';
 import { Navbar } from './features/repo-header/Navbar';
 import { RepoHeader } from './features/repo-header/RepoHeader';
 import { CodeExplorer } from './features/code-explorer/CodeExplorer';
@@ -13,17 +14,60 @@ import { PullRequestsView } from './features/pull-requests/PullRequestsView';
 import { ActionsView } from './features/actions/ActionsView';
 import { InsightsView } from './features/insights/InsightsView';
 import { CommandPalette } from './features/command-palette/CommandPalette';
-import { Github, Heart } from 'lucide-react';
+import { Github, Heart, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('code');
   const [currentBranch, setCurrentBranch] = useState<string>(repoEngine.currentBranch);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [theme, setTheme] = useState<'dark' | 'dimmed'>('dark');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncToast, setSyncToast] = useState<string | null>(null);
+
+  const githubSync = useMemo(
+    () =>
+      new GitHubSyncService({
+        owner: 'prssbayu-oss',
+        repo: 'VexorionEditorGithub',
+      }),
+    []
+  );
 
   // Trigger state refreshes when engine updates
   const [, setVersion] = useState<number>(0);
   const triggerUpdate = () => setVersion((v) => v + 1);
+
+  // Sync real data from GitHub API
+  const handleSyncWithGitHub = async () => {
+    setIsSyncing(true);
+    try {
+      const [details, branches, commits, issues] = await Promise.all([
+        githubSync.fetchRepoDetails().catch(() => ({})),
+        githubSync.fetchBranches().catch(() => []),
+        githubSync.fetchCommits('main').catch(() => []),
+        githubSync.fetchIssues().catch(() => []),
+      ]);
+
+      repoEngine.applyLiveSyncData({
+        details,
+        branches: branches.length > 0 ? branches : undefined,
+        commits: commits.length > 0 ? commits : undefined,
+        issues: issues.length > 0 ? issues : undefined,
+      });
+
+      triggerUpdate();
+      setSyncToast('Connected & synced with GitHub: prssbayu-oss/VexorionEditorGithub');
+      setTimeout(() => setSyncToast(null), 4000);
+    } catch (err) {
+      console.error('GitHub Sync Error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    handleSyncWithGitHub();
+  }, []);
 
   // Handlers for Git state mutations
   const handleSwitchBranch = (branch: string) => {
@@ -98,6 +142,14 @@ export default function App() {
         onToggleTheme={() => setTheme(theme === 'dark' ? 'dimmed' : 'dark')}
       />
 
+      {/* Sync Toast Notification */}
+      {syncToast && (
+        <div className="bg-[#1f6feb]/20 border-b border-[#1f6feb]/40 px-4 py-2 flex items-center justify-center gap-2 text-xs text-[#58a6ff]">
+          <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb950] shrink-0" />
+          <span>{syncToast}</span>
+        </div>
+      )}
+
       {/* Repository Header with Star/Fork actions & Navigation Tabs */}
       <RepoHeader
         details={repoEngine.details}
@@ -107,6 +159,8 @@ export default function App() {
         openPRsCount={openPRsCount}
         onToggleStar={handleToggleStar}
         onToggleFork={handleToggleFork}
+        isSyncing={isSyncing}
+        onSyncNow={handleSyncWithGitHub}
       />
 
       {/* Main Tab Content */}

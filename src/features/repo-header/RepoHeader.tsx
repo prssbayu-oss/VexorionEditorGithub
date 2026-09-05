@@ -12,6 +12,7 @@ import {
   BookOpen,
   Pin,
   ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
@@ -26,6 +27,8 @@ export interface RepoHeaderProps {
   openPRsCount: number;
   onToggleStar: () => void;
   onToggleFork: () => void;
+  isSyncing?: boolean;
+  onSyncNow?: () => void;
 }
 
 export const RepoHeader: React.FC<RepoHeaderProps> = ({
@@ -36,6 +39,8 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
   openPRsCount,
   onToggleStar,
   onToggleFork,
+  isSyncing = false,
+  onSyncNow,
 }) => {
   const tabs: TabItem[] = [
     {
@@ -75,14 +80,18 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
             <BookOpen className="w-4 h-4 text-[#8b949e] shrink-0" />
             <a
-              href="#owner"
+              href={`https://github.com/${details.owner}`}
+              target="_blank"
+              rel="noreferrer"
               className="text-xs sm:text-sm md:text-base text-[#58a6ff] hover:underline font-medium shrink-0"
             >
               {details.owner}
             </a>
             <span className="text-[#8b949e] shrink-0">/</span>
             <a
-              href="#repo"
+              href={`https://github.com/${details.owner}/${details.name}`}
+              target="_blank"
+              rel="noreferrer"
               className="text-xs sm:text-sm md:text-base text-[#58a6ff] hover:underline font-bold break-all"
             >
               {details.name}
@@ -97,8 +106,42 @@ export const RepoHeader: React.FC<RepoHeaderProps> = ({
             </span>
           </div>
 
-          {/* Social action buttons */}
+          {/* Social action buttons & Live Sync */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 w-full sm:w-auto justify-start sm:justify-end shrink-0">
+            {onSyncNow && (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={onSyncNow}
+                disabled={isSyncing}
+                icon={
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${
+                      isSyncing ? 'animate-spin text-[#58a6ff]' : 'text-[#3fb950]'
+                    }`}
+                  />
+                }
+                className="border-[#3fb950]/40 text-[#c9d1d9] hover:bg-[#238636]/15 hover:border-[#3fb950]"
+              >
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+                  <span className="text-[11px] font-medium whitespace-nowrap">
+                    {isSyncing ? 'Syncing...' : 'Live Sync'}
+                  </span>
+                </span>
+              </Button>
+            )}
+
+            <a
+              href={`https://github.com/${details.owner}/${details.name}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-[#8b949e] hover:text-[#58a6ff] transition-colors shrink-0 px-2 py-1 rounded border border-[#30363d] bg-[#21262d] hover:bg-[#30363d]"
+              title="Open repository on GitHub.com"
+            >
+              <ExternalLink className="w-3 h-3" />
+              <span className="hidden md:inline">GitHub</span>
+            </a>
             <Button
               variant="outline"
               size="xs"

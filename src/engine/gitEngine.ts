@@ -52,19 +52,19 @@ export class GitRepositoryEngine {
 
     this.commits = [
       {
-        hash: '8f921bc827361928374619283746192837461928',
-        shortHash: '8f921bc',
-        message: 'feat(ui): migrate components to modern layout system',
-        description: 'Refactor Button, Badge, and Modal to use pure atomic Tailwind tokens with motion animations.',
+        hash: '5ff296eeade49ea96a77cd1c0ae016988234917f',
+        shortHash: '5ff296e',
+        message: 'feat: initial release of VexorionEditorGithub - modern web interface for GitHub',
+        description: 'Pushed whole project to real GitHub repository github.com/prssbayu-oss/VexorionEditorGithub.',
         author: {
           name: 'Prasetyo Bayu Widodo',
-          username: 'prasetyobayu',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face',
+          username: 'prssbayu-oss',
+          avatar: 'https://avatars.githubusercontent.com/u/292710804?v=4',
         },
-        timestamp: '15 minutes ago',
+        timestamp: 'just now',
         branch: 'main',
-        parents: ['3c819fa'],
-        stats: { additions: 320, deletions: 45, filesChanged: 8 },
+        parents: [],
+        stats: { additions: 6408, deletions: 0, filesChanged: 35 },
       },
       {
         hash: '3c819fa283746192837461928374619283746192',
@@ -933,6 +933,30 @@ Clean high-contrast borders, refined 13px mono fonts, and fluid interactive tabs
     });
 
     return true;
+  }
+
+  public applyLiveSyncData(data: {
+    details?: Partial<RepoDetails>;
+    commits?: GitCommit[];
+    branches?: GitBranch[];
+    issues?: Issue[];
+    files?: RepoFile[];
+  }) {
+    if (data.details) {
+      this.details = { ...this.details, ...data.details };
+    }
+    if (data.commits && data.commits.length > 0) {
+      this.commits = data.commits;
+    }
+    if (data.branches && data.branches.length > 0) {
+      this.branches = data.branches;
+    }
+    if (data.issues && data.issues.length > 0) {
+      this.issues = data.issues;
+    }
+    if (data.files && data.files.length > 0) {
+      this.files[this.currentBranch] = data.files;
+    }
   }
 }
 
