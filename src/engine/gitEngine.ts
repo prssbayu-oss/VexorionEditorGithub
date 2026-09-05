@@ -955,7 +955,7 @@ Clean high-contrast borders, refined 13px mono fonts, and fluid interactive tabs
       this.issues = data.issues;
     }
     if (data.files && data.files.length > 0) {
-      this.files[this.currentBranch] = data.files;
+      this.fileTrees[this.currentBranch] = data.files;
     }
   }
 }
