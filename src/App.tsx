@@ -41,11 +41,12 @@ export default function App() {
   const handleSyncWithGitHub = async () => {
     setIsSyncing(true);
     try {
-      const [details, branches, commits, issues] = await Promise.all([
+      const [details, branches, commits, issues, realFiles] = await Promise.all([
         githubSync.fetchRepoDetails().catch(() => ({})),
         githubSync.fetchBranches().catch(() => []),
         githubSync.fetchCommits('main').catch(() => []),
         githubSync.fetchIssues().catch(() => []),
+        githubSync.fetchFullTree('main').catch(() => []),
       ]);
 
       repoEngine.applyLiveSyncData({
@@ -53,10 +54,11 @@ export default function App() {
         branches: branches.length > 0 ? branches : undefined,
         commits: commits.length > 0 ? commits : undefined,
         issues: issues.length > 0 ? issues : undefined,
+        files: realFiles.length > 0 ? realFiles : undefined,
       });
 
       triggerUpdate();
-      setSyncToast('Connected & synced with GitHub: prssbayu-oss/VexorionEditorGithub');
+      setSyncToast('Connected & synced live file tree with GitHub: prssbayu-oss/VexorionEditorGithub');
       setTimeout(() => setSyncToast(null), 4000);
     } catch (err) {
       console.error('GitHub Sync Error:', err);
@@ -68,6 +70,10 @@ export default function App() {
   useEffect(() => {
     handleSyncWithGitHub();
   }, []);
+
+  const handleFetchFileContent = async (path: string) => {
+    return await githubSync.fetchFileRawContent(path, currentBranch || 'main');
+  };
 
   // Handlers for Git state mutations
   const handleSwitchBranch = (branch: string) => {
@@ -178,6 +184,7 @@ export default function App() {
             contributors={repoEngine.contributors}
             onCommitFileChange={handleCommitFileChange}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+            onFetchFileContent={handleFetchFileContent}
           />
         )}
 

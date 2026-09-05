@@ -92,6 +92,20 @@ export class GitHubSyncService {
     });
   }
 
+  public async fetchFullTree(branch = 'main'): Promise<RepoFile[]> {
+    try {
+      const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/git/trees/${branch}?recursive=1`;
+      const res = await fetch(url, { headers: this.getHeaders() });
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.tree || !Array.isArray(data.tree)) return [];
+
+      return buildTreeFromGitBlobs(data.tree, this.config.owner);
+    } catch {
+      return [];
+    }
+  }
+
   public async fetchContents(path = ''): Promise<RepoFile[]> {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
     const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${cleanPath}`;
@@ -113,9 +127,21 @@ export class GitHubSyncService {
     }));
   }
 
-  public async fetchFileRawContent(path: string): Promise<string> {
+  public async fetchFileRawContent(path: string, branch = 'main'): Promise<string> {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${cleanPath}`;
+    // 1. Try fast raw CDN first
+    try {
+      const rawUrl = `https://raw.githubusercontent.com/${this.config.owner}/${this.config.repo}/${branch}/${cleanPath}`;
+      const rawRes = await fetch(rawUrl);
+      if (rawRes.ok) {
+        return await rawRes.text();
+      }
+    } catch {
+      // Fall back to API
+    }
+
+    // 2. Fall back to GitHub API
+    const url = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents/${cleanPath}?ref=${branch}`;
     const res = await fetch(url, { headers: this.getHeaders() });
     if (!res.ok) throw new Error(`Cannot load file ${cleanPath}`);
     const data = await res.json();
@@ -209,4 +235,52 @@ function formatTimeAgo(date: Date): string {
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
   return date.toLocaleDateString();
+}
+
+export function buildTreeFromGitBlobs(
+  blobs: { path: string; type: string; size?: number; sha: string }[],
+  owner: string
+): RepoFile[] {
+  const rootFiles: RepoFile[] = [];
+  const dirMap = new Map<string, RepoFile>();
+
+  // Ensure items are sorted so directory paths are processed before deep nested paths
+  const sorted = [...blobs].sort((a, b) => a.path.localeCompare(b.path));
+
+  for (const item of sorted) {
+    const parts = item.path.split('/');
+    const name = parts[parts.length - 1];
+    const isDir = item.type === 'tree';
+
+    const fileNode: RepoFile = {
+      name,
+      path: item.path,
+      type: isDir ? 'directory' : 'file',
+      size: item.size,
+      lastCommitMessage: 'Pushed to GitHub repository',
+      lastCommitHash: item.sha ? item.sha.slice(0, 7) : 'main',
+      lastCommitTime: 'latest',
+      lastCommitAuthor: owner,
+      language: isDir ? undefined : detectLanguage(name),
+      children: isDir ? [] : undefined,
+    };
+
+    if (isDir) {
+      dirMap.set(item.path, fileNode);
+    }
+
+    if (parts.length === 1) {
+      rootFiles.push(fileNode);
+    } else {
+      const parentPath = parts.slice(0, -1).join('/');
+      const parent = dirMap.get(parentPath);
+      if (parent && parent.children) {
+        parent.children.push(fileNode);
+      } else {
+        rootFiles.push(fileNode);
+      }
+    }
+  }
+
+  return rootFiles;
 }

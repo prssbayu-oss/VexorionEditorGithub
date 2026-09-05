@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GitBranch,
   Folder,
@@ -22,6 +22,8 @@ import {
   Scale,
   ArrowLeft,
   Edit3,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { Dropdown } from '../../components/Dropdown';
@@ -45,6 +47,7 @@ export interface CodeExplorerProps {
   contributors: Contributor[];
   onCommitFileChange: (filePath: string, newContent: string, message: string) => void;
   onOpenCommandPalette: () => void;
+  onFetchFileContent?: (path: string) => Promise<string>;
 }
 
 export const CodeExplorer: React.FC<CodeExplorerProps> = ({
@@ -59,9 +62,12 @@ export const CodeExplorer: React.FC<CodeExplorerProps> = ({
   contributors,
   onCommitFileChange,
   onOpenCommandPalette,
+  onFetchFileContent,
 }) => {
   const [currentPath, setCurrentPath] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<RepoFile | null>(null);
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [readmeContent, setReadmeContent] = useState<string>('');
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [cloneProtocol, setCloneProtocol] = useState<'https' | 'ssh' | 'cli'>('https');
   const [copiedClone, setCopiedClone] = useState(false);
@@ -184,9 +190,49 @@ export const CodeExplorer: React.FC<CodeExplorerProps> = ({
     });
   };
 
+  // Fetch real content when selecting a file
+  useEffect(() => {
+    if (!selectedFile || selectedFile.type !== 'file') return;
+    if (selectedFile.content !== undefined) return;
+
+    if (onFetchFileContent) {
+      setIsLoadingFile(true);
+      onFetchFileContent(selectedFile.path)
+        .then((content) => {
+          selectedFile.content = content;
+          setSelectedFile((prev) => (prev ? { ...prev, content } : null));
+        })
+        .catch((err) => {
+          console.error('Failed to load file content:', err);
+        })
+        .finally(() => {
+          setIsLoadingFile(false);
+        });
+    }
+  }, [selectedFile?.path, onFetchFileContent]);
+
   // Find README file if at root
   const rootReadme = files.find((f) => f.name.toLowerCase() === 'readme.md');
-  const readmeBlocks = rootReadme?.content ? parseMarkdown(rootReadme.content) : [];
+
+  // Auto-fetch root README.md content if empty
+  useEffect(() => {
+    if (rootReadme && rootReadme.content) {
+      setReadmeContent(rootReadme.content);
+    } else if (rootReadme && onFetchFileContent) {
+      onFetchFileContent(rootReadme.path)
+        .then((content) => {
+          rootReadme.content = content;
+          setReadmeContent(content);
+        })
+        .catch(() => {});
+    }
+  }, [rootReadme?.path, onFetchFileContent]);
+
+  const readmeBlocks = readmeContent
+    ? parseMarkdown(readmeContent)
+    : rootReadme?.content
+    ? parseMarkdown(rootReadme.content)
+    : [];
 
   const currentDirFiles = getCurrentDirFiles();
   // Sort: directories first, then files alphabetically
@@ -305,31 +351,51 @@ export const CodeExplorer: React.FC<CodeExplorerProps> = ({
           {/* If a file is selected: Display CodeViewer & Edit button */}
           {selectedFile ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={() => handleNavigatePath(currentPath.split('/').slice(0, -1).join('/'))}
-                  icon={<ArrowLeft className="w-3.5 h-3.5" />}
-                >
-                  Back to files
-                </Button>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => handleNavigatePath(currentPath.split('/').slice(0, -1).join('/'))}
+                    icon={<ArrowLeft className="w-3.5 h-3.5" />}
+                  >
+                    Back to files
+                  </Button>
+                  <span className="text-xs text-[#8b949e] font-mono hidden sm:inline">
+                    {selectedFile.path}
+                  </span>
+                </div>
 
-                <Button
-                  variant="outline"
-                  size="xs"
-                  onClick={handleOpenEdit}
-                  icon={<Edit3 className="w-3.5 h-3.5 text-[#58a6ff]" />}
-                >
-                  Edit file & Commit
-                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] text-[#3fb950] bg-[#238636]/10 px-2 py-0.5 rounded border border-[#238636]/30">
+                    <CheckCircle2 className="w-3 h-3" />
+                    <span>Live GitHub Code</span>
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={handleOpenEdit}
+                    icon={<Edit3 className="w-3.5 h-3.5 text-[#58a6ff]" />}
+                  >
+                    Edit file & Commit
+                  </Button>
+                </div>
               </div>
 
-              <CodeViewer
-                code={selectedFile.content || '// Empty file'}
-                filename={selectedFile.name}
-                language={selectedFile.language || 'typescript'}
-              />
+              {isLoadingFile ? (
+                <div className="bg-[#161b22] border border-[#30363d] rounded-lg p-12 flex flex-col items-center justify-center gap-3 text-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#58a6ff]" />
+                  <p className="text-xs text-[#8b949e]">
+                    Loading real code from GitHub ({selectedFile.path})...
+                  </p>
+                </div>
+              ) : (
+                <CodeViewer
+                  code={selectedFile.content || '// Empty file'}
+                  filename={selectedFile.name}
+                  language={selectedFile.language || 'typescript'}
+                />
+              )}
             </div>
           ) : (
             /* File Explorer Table */
