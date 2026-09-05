@@ -1,0 +1,6 @@
+{
+  "name": "VexorionEditorGithub",
+  "description": "VexorionEditorGithub by Prasetyo Bayu Widodo - Modern, sleek GitHub interface featuring interactive code browser, pull requests with diff viewer, issues tracker, CI/CD actions, and activity insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
